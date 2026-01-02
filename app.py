@@ -31,7 +31,7 @@ COMPONENTS = [
 # ------------------ Reset keys ------------------
 RESET_KEYS = [
     "date_field", "member_field", "component_field",
-    "tickets_field", "banners_field", "sku_field",   # <-- added sku_field
+    "tickets_field", "banners_field", "codes_field",   # <-- switched to codes_field
     "hours_field", "minutes_field", "comments_field"
 ]
 
@@ -128,10 +128,14 @@ with tab1:
         with c2:
             component = st.selectbox("Component", COMPONENTS, key="component_field")
 
-        # Tickets, Banners & SKU (same datatype)
-        tickets = st.number_input("Tickets", min_value=0, step=1, key="tickets_field")
-        banners = st.number_input("Banners", min_value=0, step=1, key="banners_field")
-        sku = st.number_input("SKU", min_value=0, step=1, key="sku_field")  # <-- new input
+        # Tickets, Banners & Codes (same datatype) - single row
+        r_metrics = st.columns(3)
+        with r_metrics[0]:
+            tickets = st.number_input("Tickets", min_value=0, step=1, key="tickets_field")
+        with r_metrics[1]:
+            banners = st.number_input("Banners", min_value=0, step=1, key="banners_field")
+        with r_metrics[2]:
+            codes = st.number_input("Codes", min_value=0, step=1, key="codes_field")  # <-- replaced sku with codes
 
         # Hours & Minutes
         c3, c4 = st.columns(2)
@@ -156,7 +160,7 @@ with tab1:
                 "component": component,
                 "tickets": int(tickets),
                 "banners": int(banners),
-                "sku": int(sku),                   # <-- store sku
+                "codes": int(codes),              # <-- store codes (int8/bigint)
                 "duration": duration_minutes,
                 "comments": (comments or "").strip() or None
             }
@@ -189,8 +193,8 @@ with tab1:
             df1["team"] = df1["team"].astype(str).str.strip()
             df1 = df1[df1["team"].str.casefold() == TEAM.strip().casefold()]
 
-        # Drop unwanted columns: id, pages, codes (KEEP banners and sku)
-        drop_cols = [col for col in ["id", "pages", "codes"] if col in df1.columns]
+        # Drop unwanted columns: id, pages (KEEP banners and codes)
+        drop_cols = [col for col in ["id", "pages"] if col in df1.columns]
         df1 = df1.drop(columns=drop_cols)
 
         st.subheader(f"Latest entries for {TEAM} (sorted by Date descending)")
@@ -348,8 +352,7 @@ with tab3:
 
             team_total = float(merged_stats["Total Hours"].sum())
             team_leave = float(merged_stats["Leave Hours"].sum())
-            team_utilized = float(merged_stats["Utilized Hours"].sum())
-            team_occupied = float(merged_stats["Occupied Hours"].sum())
+            team_utilized = float(eam_occupied = float(merged_stats["Occupied Hours"].sum())
 
             team_util_pct = (team_utilized / team_total * 100) if team_total > 0 else 0.0
             team_occ_pct = (team_occupied / team_total * 100) if team_total > 0 else 0.0
