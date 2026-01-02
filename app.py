@@ -13,15 +13,16 @@ SUPABASE_URL = "https://vupalstqgfzwxwlvengp.supabase.co"   # TODO: replace
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1cGFsc3RxZ2Z6d3h3bHZlbmdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwMTI0MjIsImV4cCI6MjA4MjU4ODQyMn0.tQsnAFYleVlRldH_nYW3QGhMvEQaYVH0yXNpkJqtkBY"  # TODO: replace
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-TEAM = "E-Commerce Operations"
-MEMBERS = ["Nagalingam"]
+TEAM = "E- Comm-Promo & Banner Creation"
+MEMBERS = ["Sugan Babu"]
 COMPONENTS = [
     "-- Select --",
-    "New Article Page Creation",
-    "Page Updates",
-    "BAU Promo Planner",
-    "New Page Creation",
-    "Innovation",
+    "Promo Code Setup",
+    "Promo QC",
+    "Home Page Planner",
+    "Category Planner",
+    "Sales and Offer Page Planner",
+    "Mind Touch Codes",
     "Meeting",
     "Others",
     "Leave"
@@ -109,14 +110,14 @@ def compute_weekdays_for_choice(choice, filtered_months, month_labels,
 
 # ------------------ Tabs ------------------
 tab1, tab2, tab3 = st.tabs([
-    "📝 E-Commerce Operations",
+    "📝 E- Comm-Promo & Banner Creation",
     "📊 Visuals",
     "📈 Utilization & Occupancy"
 ])
 
 # ------------------ TAB 1 ------------------
 with tab1:
-    st.title("E-Commerce Operations")
+    st.title("E- Comm-Promo & Banner Creation")
     st.text_input("Team", TEAM, disabled=True)
 
     with st.form(key="entry_form", clear_on_submit=False):
@@ -160,7 +161,7 @@ with tab1:
                 "comments": (comments or "").strip() or None
             }
             try:
-                res = supabase.table("ecom").insert(new_row).execute()
+                res = supabase.table("ecom_promo").insert(new_row).execute()
                 if res.data:
                     st.success("Saved successfully")
                     st.session_state["do_reset"] = True
@@ -174,7 +175,7 @@ with tab1:
 
     # Fetch and filter by team; remove unwanted columns in display
     try:
-        response = supabase.table("ecom").select("*").order("date", desc=True).execute()
+        response = supabase.table("ecom_promo").select("*").order("date", desc=True).execute()
         df1 = pd.DataFrame(response.data)
     except Exception as e:
         st.error(f"Error fetching data: {e}")
@@ -201,7 +202,7 @@ with tab1:
 with tab2:
     st.title("Visuals Dashboard")
     try:
-        response = supabase.table("ecom").select("*").execute()
+        response = supabase.table("ecom_promo").select("*").execute()
         vdf = pd.DataFrame(response.data)
     except Exception as e:
         st.error(f"Error fetching data: {e}")
@@ -275,7 +276,7 @@ with tab2:
 with tab3:
     st.title("Utilization & Occupancy")
     try:
-        response = supabase.table("ecom").select("*").execute()
+        response = supabase.table("ecom_promo").select("*").execute()
         raw = pd.DataFrame(response.data)
     except Exception as e:
         st.error(f"Error fetching data: {e}")
