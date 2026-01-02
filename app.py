@@ -271,7 +271,7 @@ with tab2:
                                         x_type="O", y_type="Q", x_title="Week", y_title="Banners")
                 st.altair_chart(chart, use_container_width=True)
 
-            # ---- Row 2: Code by week & Tickets by member
+            # ---- Row 2: Code by week & (empty column preserved to keep positions)
             r2c1, r2c2 = st.columns(2)
             with r2c1:
                 st.subheader("Code by week")
@@ -279,11 +279,8 @@ with tab2:
                                         x_type="O", y_type="Q", x_title="Week", y_title="Code")
                 st.altair_chart(chart, use_container_width=True)
             with r2c2:
-                member_grouped = filtered.groupby("member")[["tickets"]].sum().reset_index()
-                st.subheader("Tickets by member")
-                chart = bar_with_labels(member_grouped, "member", "tickets", "steelblue",
-                                        x_type="N", y_type="Q", x_title="Member", y_title="Tickets")
-                st.altair_chart(chart, use_container_width=True)
+                # Intentionally left empty to preserve layout/positions as requested
+                st.write("")
 
             # ---- By Component: single bar = total (tickets + banners + code)
             st.subheader("By Component (Total of Tickets + Banners + Code)")
