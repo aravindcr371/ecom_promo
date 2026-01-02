@@ -31,7 +31,7 @@ COMPONENTS = [
 # ------------------ Reset keys ------------------
 RESET_KEYS = [
     "date_field", "member_field", "component_field",
-    "tickets_field", "banners_field", "codes_field",   # <-- switched to codes_field
+    "tickets_field", "banners_field", "codes_field",   # using codes, not sku
     "hours_field", "minutes_field", "comments_field"
 ]
 
@@ -128,14 +128,14 @@ with tab1:
         with c2:
             component = st.selectbox("Component", COMPONENTS, key="component_field")
 
-        # Tickets, Banners & Codes (same datatype) - single row
-        r_metrics = st.columns(3)
-        with r_metrics[0]:
+        # Tickets, Banners & Codes (single row)
+        m1, m2, m3 = st.columns(3)
+        with m1:
             tickets = st.number_input("Tickets", min_value=0, step=1, key="tickets_field")
-        with r_metrics[1]:
+        with m2:
             banners = st.number_input("Banners", min_value=0, step=1, key="banners_field")
-        with r_metrics[2]:
-            codes = st.number_input("Codes", min_value=0, step=1, key="codes_field")  # <-- replaced sku with codes
+        with m3:
+            codes = st.number_input("Codes", min_value=0, step=1, key="codes_field")
 
         # Hours & Minutes
         c3, c4 = st.columns(2)
@@ -160,7 +160,7 @@ with tab1:
                 "component": component,
                 "tickets": int(tickets),
                 "banners": int(banners),
-                "codes": int(codes),              # <-- store codes (int8/bigint)
+                "codes": int(codes),              # store codes (int8/bigint)
                 "duration": duration_minutes,
                 "comments": (comments or "").strip() or None
             }
@@ -352,7 +352,8 @@ with tab3:
 
             team_total = float(merged_stats["Total Hours"].sum())
             team_leave = float(merged_stats["Leave Hours"].sum())
-            team_utilized = float(eam_occupied = float(merged_stats["Occupied Hours"].sum())
+            team_utilized = float(merged_stats["Utilized Hours"].sum())
+            team_occupied = float(merged_stats["Occupied Hours"].sum())
 
             team_util_pct = (team_utilized / team_total * 100) if team_total > 0 else 0.0
             team_occ_pct = (team_occupied / team_total * 100) if team_total > 0 else 0.0
