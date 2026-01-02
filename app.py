@@ -31,7 +31,7 @@ COMPONENTS = [
 # ------------------ Reset keys ------------------
 RESET_KEYS = [
     "date_field", "member_field", "component_field",
-    "tickets_field", "banners_field", "codes_field",   # using codes, not sku2
+    "tickets_field", "banners_field", "code_field",   # singular: code
     "hours_field", "minutes_field", "comments_field"
 ]
 
@@ -128,14 +128,14 @@ with tab1:
         with c2:
             component = st.selectbox("Component", COMPONENTS, key="component_field")
 
-        # Tickets, Banners & Codes (single row)
+        # Tickets, Banners & Code (single row)
         m1, m2, m3 = st.columns(3)
         with m1:
             tickets = st.number_input("Tickets", min_value=0, step=1, key="tickets_field")
         with m2:
             banners = st.number_input("Banners", min_value=0, step=1, key="banners_field")
         with m3:
-            codes = st.number_input("Codes", min_value=0, step=1, key="codes_field")
+            code = st.number_input("Code", min_value=0, step=1, key="code_field")  # singular
 
         # Hours & Minutes
         c3, c4 = st.columns(2)
@@ -160,7 +160,7 @@ with tab1:
                 "component": component,
                 "tickets": int(tickets),
                 "banners": int(banners),
-                "codes": int(codes),              # store codes (int8/bigint)
+                "code": int(code),               # store as 'code' (singular)
                 "duration": duration_minutes,
                 "comments": (comments or "").strip() or None
             }
@@ -193,8 +193,8 @@ with tab1:
             df1["team"] = df1["team"].astype(str).str.strip()
             df1 = df1[df1["team"].str.casefold() == TEAM.strip().casefold()]
 
-        # Drop unwanted columns: id, pages, sku2 (if present)
-        drop_cols = [col for col in ["id", "pages", "sku2"] if col in df1.columns]
+        # Drop unwanted columns: id, pages, sku, sku2
+        drop_cols = [col for col in ["id", "pages", "sku", "sku2"] if col in df1.columns]
         df1 = df1.drop(columns=drop_cols)
 
         # Ensure 'comments' is the last column in display
@@ -222,7 +222,12 @@ with tab2:
     if vdf.empty:
         st.info("No data available")
     else:
+        # Normalize schema: use 'code' (singular)
         vdf["date"] = pd.to_datetime(vdf["date"], errors="coerce")
+        if "code" not in vdf.columns and "codes" in vdf.columns:
+            vdf["code"] = vdf["codes"]  # back-compat if older rows had 'codes'
+        vdf[["tickets", "banners", "code"]] = vdf[["tickets", "banners", "code"]].fillna(0)
+
         options, filtered_months, month_labels, previous_month_period, today, current_weekday, current_month, current_year = build_period_options_and_months(vdf["date"])
         choice = st.selectbox("Select period", options, key="tab2_period")
         weekdays = compute_weekdays_for_choice(choice, filtered_months, month_labels, previous_month_period,
@@ -232,9 +237,9 @@ with tab2:
         if filtered.empty:
             st.info("No visuals for selected period.")
         else:
-            # ---- Weekly groupings for tickets, banners, codes
+            # ---- Weekly groupings for tickets, banners, code
             week_grouped = (
-                filtered.groupby("week")[["tickets", "banners", "codes"]]
+                filtered.groupby("week")[["tickets", "banners", "code"]]
                 .sum()
                 .reset_index()
                 .sort_values("week")
@@ -266,12 +271,12 @@ with tab2:
                                         x_type="O", y_type="Q", x_title="Week", y_title="Banners")
                 st.altair_chart(chart, use_container_width=True)
 
-            # ---- Row 2: Codes by week & Tickets by member (kept)
+            # ---- Row 2: Code by week & Tickets by member
             r2c1, r2c2 = st.columns(2)
             with r2c1:
-                st.subheader("Codes by week")
-                chart = bar_with_labels(week_grouped, "week", "codes", "seagreen",
-                                        x_type="O", y_type="Q", x_title="Week", y_title="Codes")
+                st.subheader("Code by week")
+                chart = bar_with_labels(week_grouped, "week", "code", "seagreen",
+                                        x_type="O", y_type="Q", x_title="Week", y_title="Code")
                 st.altair_chart(chart, use_container_width=True)
             with r2c2:
                 member_grouped = filtered.groupby("member")[["tickets"]].sum().reset_index()
@@ -280,16 +285,16 @@ with tab2:
                                         x_type="N", y_type="Q", x_title="Member", y_title="Tickets")
                 st.altair_chart(chart, use_container_width=True)
 
-            # ---- By Component: single bar = total (tickets + banners + codes)
-            st.subheader("By Component (Total of Tickets + Banners + Codes)")
+            # ---- By Component: single bar = total (tickets + banners + code)
+            st.subheader("By Component (Total of Tickets + Banners + Code)")
             component_grouped = (
-                filtered.groupby("component")[["tickets", "banners", "codes"]]
+                filtered.groupby("component")[["tickets", "banners", "code"]]
                 .sum()
                 .reset_index()
             )
             component_grouped["component"] = component_grouped["component"].fillna("Unspecified")
             component_grouped.loc[component_grouped["component"].eq(""), "component"] = "Unspecified"
-            component_grouped["total"] = component_grouped[["tickets", "banners", "codes"]].sum(axis=1)
+            component_grouped["total"] = component_grouped[["tickets", "banners", "code"]].sum(axis=1)
             component_grouped = component_grouped.sort_values("total", ascending=False)
 
             bar = alt.Chart(component_grouped).mark_bar(color="#4C78A8").encode(
@@ -298,7 +303,7 @@ with tab2:
                     title="Component",
                     sort=alt.SortField(field="total", order="descending")
                 ),
-                y=alt.Y("total:Q", title="Total (Tickets + Banners + Codes)")
+                y=alt.Y("total:Q", title="Total (Tickets + Banners + Code)")
             ).properties(height=400)
 
             text = alt.Chart(component_grouped).mark_text(align="center", baseline="bottom", dy=-5, color="black").encode(
@@ -312,7 +317,7 @@ with tab2:
                     alt.Tooltip("component:N", title="Component"),
                     alt.Tooltip("tickets:Q", title="Tickets"),
                     alt.Tooltip("banners:Q", title="Banners"),
-                    alt.Tooltip("codes:Q", title="Codes"),
+                    alt.Tooltip("code:Q", title="Code"),
                     alt.Tooltip("total:Q", title="Total"),
                 ]
             )
